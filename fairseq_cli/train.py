@@ -163,8 +163,8 @@ def train(args, trainer, task, epoch_itr):
 
     valid_subsets = args.valid_subset.split(',')
     max_update = args.max_update or math.inf
-    with metrics.aggregate() as agg:
-        for samples in progress:
+    for samples in progress:
+        with metrics.aggregate() as agg:
             log_output = trainer.train_step(samples)
             num_updates = trainer.get_num_updates()
             if log_output is None:
@@ -174,17 +174,17 @@ def train(args, trainer, task, epoch_itr):
             stats = get_training_stats(agg.get_smoothed_values())
             progress.log(stats, tag='train', step=num_updates)
 
-            if (
-                not args.disable_validation
-                and args.save_interval_updates > 0
-                and num_updates % args.save_interval_updates == 0
-                and num_updates > 0
-            ):
-                valid_losses = validate(args, trainer, task, epoch_itr, valid_subsets)
-                checkpoint_utils.save_checkpoint(args, trainer, epoch_itr, valid_losses[0])
+        if (
+            not args.disable_validation
+            and args.save_interval_updates > 0
+            and num_updates % args.save_interval_updates == 0
+            and num_updates > 0
+        ):
+            valid_losses = validate(args, trainer, task, epoch_itr, valid_subsets)
+            checkpoint_utils.save_checkpoint(args, trainer, epoch_itr, valid_losses[0])
 
-            if num_updates >= max_update:
-                break
+        if num_updates >= max_update:
+            break
 
     # log end-of-epoch stats
     stats = get_training_stats(agg.get_smoothed_values())
